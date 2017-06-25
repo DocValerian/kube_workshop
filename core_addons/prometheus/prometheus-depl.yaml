@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: kube-system
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometheus
+      annotations:
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+        - image: prom/prometheus:v1.6.0
+          name: prometheus
+          command:
+            - /bin/prometheus
+          args:
+            - -config.file=/etc/prometheus/prometheus.yml
+            - -storage.local.path=/prometheus
+            - -storage.local.retention=168h
+            - -web.external-url=https://api.skunkworksngwsa.de/api/v1/proxy/namespaces/kube-system/services/prometheus/
+            - -web.route-prefix=/
+            - -log.level=error
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /etc/prometheus
+              name: prometheus-config-volume
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 500m
+              memory: 2500Mi
+        - image: prom/blackbox-exporter:v0.4.0
+          name: blackbox-exporter
+          args:
+            - -config.file=/config/blackbox.yml
+          ports:
+            - containerPort: 9115
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /config
+              name: blackbox-config-volume
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
+      volumes:
+        - configMap:
+            name: prometheus-config
+          name: prometheus-config-volume
+        - configMap:
+            name: blackbox-config
+          name: blackbox-config-volume

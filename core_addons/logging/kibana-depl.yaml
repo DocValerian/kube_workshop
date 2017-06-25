@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana-logging
+  namespace: kube-system
+  labels:
+    app: kibana-logging
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kibana-logging
+    spec:
+      containers:
+        - name: kibana-logging
+          image: gcr.io/google_containers/kibana:v4.6.1-1
+          ports:
+          - containerPort: 5601
+            name: ui
+            protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: 5601
+              scheme: HTTP
+            initialDelaySeconds: 720
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: 5601
+              scheme: HTTP
+            initialDelaySeconds: 720
+            timeoutSeconds: 5
+          env:
+            - name: ELASTICSEARCH_URL
+              value: http://elasticsearch-logging:9200
+            - name: KIBANA_BASE_URL
+              value: /api/v1/proxy/namespaces/kube-system/services/kibana-logging
+          resources:
+            limits:
+              cpu: 100m
+            requests:
+              cpu: 100m

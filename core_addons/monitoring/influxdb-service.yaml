@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: influxdb-monitoring
+  namespace: kube-system
+  labels:
+    app: influxdb-monitoring
+  annotations:
+    prometheus.io/probe: "true"
+spec:
+  ports:
+    - name: http
+      port: 8083
+      targetPort: 8083
+    - name: api
+      port: 8086
+      targetPort: 8086
+  selector:
+    app: influxdb-grafana
